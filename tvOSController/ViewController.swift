@@ -23,7 +23,8 @@ class ViewController: UIViewController {
     @IBAction func sendAction(sender: AnyObject) {
         if let button = sender as? UIButton {
             if let action = button.titleLabel?.text?.lowercaseString {
-                remote.sendInfo(["buttonAction":action])
+                let dict = ["deviceID": vendorID!, "buttonAction":action]
+                remote.sendInfo(dict)
             }
         }
     }

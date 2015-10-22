@@ -11,9 +11,18 @@ import SpriteKit
 class GameScene: SKScene, RemoteReceiverDelegate {
     
         let  remote = RemoteReceiver()
+    var registeredDevices = [String]()
+    var messageCount = 0
+    
+    var myLabel = SKLabelNode(fontNamed:"HelveticaNeue-UltraLight")
     
     override func didMoveToView(view: SKView) {
         /* Setup your scene here */
+        
+        myLabel.alpha = 0
+        myLabel.fontSize = 65;
+        myLabel.position = CGPoint(x:CGRectGetMidX(self.frame), y:CGRectGetMidY(self.frame));
+        self.addChild(myLabel)
         
         remote.delegate = self
         
@@ -44,20 +53,39 @@ class GameScene: SKScene, RemoteReceiverDelegate {
     }
     
     func didReceiveMessage(userInfo: [NSObject : AnyObject]!) {
-        let myLabel = SKLabelNode(fontNamed:"Chalkduster")
-        myLabel.text = "Button Pressed!";
-        myLabel.fontSize = 65;
-        myLabel.position = CGPoint(x:CGRectGetMidX(self.frame), y:CGRectGetMidY(self.frame));
         
-        self.addChild(myLabel)
-        let particlePath = NSBundle.mainBundle().pathForResource("maginPartcle", ofType: "sks")!
-        let particles = NSKeyedUnarchiver.unarchiveObjectWithFile(particlePath) as! SKEmitterNode
-        let effectNode = SKEffectNode()
-        effectNode.addChild(particles)
-        effectNode.position = CGPoint(x:CGRectGetMidX(self.frame), y:CGRectGetMidY(self.frame));
+        let fadeAction = SKAction.sequence([SKAction.fadeAlphaTo(1.0, duration: 0.1), SKAction.waitForDuration(2.0), SKAction.fadeOutWithDuration(1.0)])
+        messageCount++
+        
+        if let deviceID = userInfo?["deviceID"]  as? String {
+            if registeredDevices.contains(deviceID) {
+                let player = registeredDevices.indexOf(deviceID)! + 1
+                if let action = userInfo["buttonAction"] as? String {
+                        myLabel.text = "\(messageCount) Player: \(player) - Action: \(action)"
+                    
+                        myLabel.removeAllActions()
+                        myLabel.runAction(fadeAction, withKey: "fadeAction")
+                }
+            } else {
+                registeredDevices.append(deviceID)
+                myLabel.text = "\(messageCount) Player: \(registeredDevices.count) Registered"
+                myLabel.removeAllActions()
+                myLabel.runAction(fadeAction, withKey: "fadeAction")
+            }
+        } else {
+            myLabel.text = "\(messageCount) No Dictionary"
+            myLabel.removeAllActions()
+            myLabel.runAction(fadeAction, withKey: "fadeAction")
+        }
+        
+//        let particlePath = NSBundle.mainBundle().pathForResource("maginPartcle", ofType: "sks")!
+//        let particles = NSKeyedUnarchiver.unarchiveObjectWithFile(particlePath) as! SKEmitterNode
+//        let effectNode = SKEffectNode()
+//        effectNode.addChild(particles)
+//        effectNode.position = CGPoint(x:CGRectGetMidX(self.frame), y:CGRectGetMidY(self.frame));
         
         // Make sure you only add the thruster once to the scene hierarchy or you'll see a crash!
-        self.addChild(effectNode)
+//        self.addChild(effectNode)
         
     }
 }
