@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		54CF61051BD92E8A004E72C5 /* GCDAsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = 54CF61021BD92E8A004E72C5 /* GCDAsyncSocket.m */; };
+		54CF61061BD92E8A004E72C5 /* RemoteReceiver.m in Sources */ = {isa = PBXBuildFile; fileRef = 54CF61041BD92E8A004E72C5 /* RemoteReceiver.m */; };
 		54DDD1281BD911C100789B03 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54DDD1271BD911C100789B03 /* AppDelegate.swift */; };
 		54DDD12A1BD911C100789B03 /* GameScene.sks in Resources */ = {isa = PBXBuildFile; fileRef = 54DDD1291BD911C100789B03 /* GameScene.sks */; };
 		54DDD12C1BD911C100789B03 /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54DDD12B1BD911C100789B03 /* GameScene.swift */; };
@@ -14,12 +16,15 @@
 		54DDD1301BD911C100789B03 /* Game.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 54DDD12F1BD911C100789B03 /* Game.xcassets */; };
 		54DDD1331BD911C100789B03 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 54DDD1311BD911C100789B03 /* Main.storyboard */; };
 		54DDD1351BD911C100789B03 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 54DDD1341BD911C100789B03 /* Assets.xcassets */; };
-		54DDD13E1BD911DF00789B03 /* libRemoteReceiver.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 54DDD13C1BD911DF00789B03 /* libRemoteReceiver.a */; };
 		54DDD1431BD9136700789B03 /* magicParticle.sks in Resources */ = {isa = PBXBuildFile; fileRef = 54DDD1411BD9136700789B03 /* magicParticle.sks */; };
 		54DDD1441BD9136700789B03 /* spark.png in Resources */ = {isa = PBXBuildFile; fileRef = 54DDD1421BD9136700789B03 /* spark.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		54CF61011BD92E8A004E72C5 /* GCDAsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDAsyncSocket.h; sourceTree = "<group>"; };
+		54CF61021BD92E8A004E72C5 /* GCDAsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDAsyncSocket.m; sourceTree = "<group>"; };
+		54CF61031BD92E8A004E72C5 /* RemoteReceiver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RemoteReceiver.h; sourceTree = "<group>"; };
+		54CF61041BD92E8A004E72C5 /* RemoteReceiver.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RemoteReceiver.m; sourceTree = "<group>"; };
 		54DDD1241BD911C100789B03 /* tvOSGame.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tvOSGame.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		54DDD1271BD911C100789B03 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		54DDD1291BD911C100789B03 /* GameScene.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = GameScene.sks; sourceTree = "<group>"; };
@@ -29,8 +34,6 @@
 		54DDD1321BD911C100789B03 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		54DDD1341BD911C100789B03 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		54DDD1361BD911C100789B03 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		54DDD13C1BD911DF00789B03 /* libRemoteReceiver.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libRemoteReceiver.a; sourceTree = "<group>"; };
-		54DDD13D1BD911DF00789B03 /* RemoteReceiver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RemoteReceiver.h; sourceTree = "<group>"; };
 		54DDD1401BD911F400789B03 /* tvOSGame-bridging-header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "tvOSGame-bridging-header.h"; sourceTree = "<group>"; };
 		54DDD1411BD9136700789B03 /* magicParticle.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = magicParticle.sks; sourceTree = "<group>"; };
 		54DDD1421BD9136700789B03 /* spark.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = spark.png; sourceTree = "<group>"; };
@@ -41,7 +44,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				54DDD13E1BD911DF00789B03 /* libRemoteReceiver.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -85,8 +87,10 @@
 		54DDD13F1BD911E200789B03 /* Remote */ = {
 			isa = PBXGroup;
 			children = (
-				54DDD13C1BD911DF00789B03 /* libRemoteReceiver.a */,
-				54DDD13D1BD911DF00789B03 /* RemoteReceiver.h */,
+				54CF61011BD92E8A004E72C5 /* GCDAsyncSocket.h */,
+				54CF61021BD92E8A004E72C5 /* GCDAsyncSocket.m */,
+				54CF61031BD92E8A004E72C5 /* RemoteReceiver.h */,
+				54CF61041BD92E8A004E72C5 /* RemoteReceiver.m */,
 				54DDD1401BD911F400789B03 /* tvOSGame-bridging-header.h */,
 			);
 			name = Remote;
@@ -166,6 +170,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				54CF61051BD92E8A004E72C5 /* GCDAsyncSocket.m in Sources */,
+				54CF61061BD92E8A004E72C5 /* RemoteReceiver.m in Sources */,
 				54DDD12C1BD911C100789B03 /* GameScene.swift in Sources */,
 				54DDD12E1BD911C100789B03 /* GameViewController.swift in Sources */,
 				54DDD1281BD911C100789B03 /* AppDelegate.swift in Sources */,
