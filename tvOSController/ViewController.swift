@@ -11,16 +11,21 @@ import UIKit
 class ViewController: UIViewController {
 
     let remote = RemoteSender()
+    let vendorID = UIDevice.currentDevice().identifierForVendor?.UUIDString
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-        
-        
+
+        //on launch register the device with the TV
+        remote.sendInfo(["deviceID":vendorID!])
     }
 
     @IBAction func sendAction(sender: AnyObject) {
-        remote.sendInfo(["launch":true])
+        if let button = sender as? UIButton {
+            if let action = button.titleLabel?.text?.lowercaseString {
+                remote.sendInfo(["buttonAction":action])
+            }
+        }
     }
     
     override func didReceiveMemoryWarning() {
