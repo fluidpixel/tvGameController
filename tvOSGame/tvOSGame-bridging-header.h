@@ -9,6 +9,5 @@
 #ifndef tvOSGame_bridging_header_h
 #define tvOSGame_bridging_header_h
 
-#import "RemoteReceiver.h"
-
+#import "GCDAsyncSocket.h"
 #endif /* tvOSGame_bridging_header_h */

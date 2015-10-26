@@ -52,12 +52,12 @@ class GameScene: SKScene, RemoteReceiverDelegate {
         /* Called before each frame is rendered */
     }
     
-    func didReceiveMessage(userInfo: [NSObject : AnyObject]!) {
+    func didReceiveMessage(userInfo: [NSObject : AnyObject]) {
         
         let fadeAction = SKAction.sequence([SKAction.fadeAlphaTo(1.0, duration: 0.1), SKAction.waitForDuration(2.0), SKAction.fadeOutWithDuration(1.0)])
         messageCount++
         
-        if let deviceID = userInfo?["deviceID"]  as? String {
+        if let deviceID = userInfo["deviceID"]  as? String {
             if registeredDevices.contains(deviceID) {
                 let player = registeredDevices.indexOf(deviceID)! + 1
                 if let action = userInfo["buttonAction"] as? String {
