@@ -8,7 +8,6 @@
 
 import Foundation
 
-let SERVICE_NAME = "_probonjore._tcp."
 
 @objc
 protocol RemoteReceiverDelegate : NSObjectProtocol {

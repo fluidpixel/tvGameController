@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		277B4DA01BDE1A090058CAED /* RemoteReceiver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277B4D9F1BDE1A090058CAED /* RemoteReceiver.swift */; };
+		277B4DA41BDE2C130058CAED /* SharedKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277B4DA31BDE2C130058CAED /* SharedKeys.swift */; };
 		54CF61051BD92E8A004E72C5 /* GCDAsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = 54CF61021BD92E8A004E72C5 /* GCDAsyncSocket.m */; };
 		54DDD1281BD911C100789B03 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54DDD1271BD911C100789B03 /* AppDelegate.swift */; };
 		54DDD12A1BD911C100789B03 /* GameScene.sks in Resources */ = {isa = PBXBuildFile; fileRef = 54DDD1291BD911C100789B03 /* GameScene.sks */; };
@@ -22,6 +23,7 @@
 
 /* Begin PBXFileReference section */
 		277B4D9F1BDE1A090058CAED /* RemoteReceiver.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RemoteReceiver.swift; sourceTree = "<group>"; };
+		277B4DA31BDE2C130058CAED /* SharedKeys.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SharedKeys.swift; sourceTree = "<group>"; };
 		54CF61011BD92E8A004E72C5 /* GCDAsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDAsyncSocket.h; sourceTree = "<group>"; };
 		54CF61021BD92E8A004E72C5 /* GCDAsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDAsyncSocket.m; sourceTree = "<group>"; };
 		54DDD1241BD911C100789B03 /* tvOSGame.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tvOSGame.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -87,6 +89,7 @@
 			isa = PBXGroup;
 			children = (
 				277B4D9F1BDE1A090058CAED /* RemoteReceiver.swift */,
+				277B4DA31BDE2C130058CAED /* SharedKeys.swift */,
 				54CF61011BD92E8A004E72C5 /* GCDAsyncSocket.h */,
 				54CF61021BD92E8A004E72C5 /* GCDAsyncSocket.m */,
 				54DDD1401BD911F400789B03 /* tvOSGame-bridging-header.h */,
@@ -170,6 +173,7 @@
 			files = (
 				277B4DA01BDE1A090058CAED /* RemoteReceiver.swift in Sources */,
 				54CF61051BD92E8A004E72C5 /* GCDAsyncSocket.m in Sources */,
+				277B4DA41BDE2C130058CAED /* SharedKeys.swift in Sources */,
 				54DDD12C1BD911C100789B03 /* GameScene.swift in Sources */,
 				54DDD12E1BD911C100789B03 /* GameViewController.swift in Sources */,
 				54DDD1281BD911C100789B03 /* AppDelegate.swift in Sources */,
