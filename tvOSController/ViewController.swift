@@ -15,7 +15,6 @@ func printTitled(title:String)(object:Any) {
 class ViewController: UIViewController, TVCSessionDelegate {
 
     let remote = RemoteSender()
-    let vendorID = UIDevice.currentDevice().identifierForVendor?.UUIDString
     
     @IBOutlet var connectionStatus:UILabel!
     
@@ -28,7 +27,7 @@ class ViewController: UIViewController, TVCSessionDelegate {
         if let button = sender as? UIButton {
             if let action = button.titleLabel?.text?.lowercaseString {
                 
-                remote.sendMessage(["deviceID": vendorID!, "buttonAction":action], replyHandler: printTitled("Reply"), errorHandler: printTitled("Error"))
+                remote.sendMessage(["buttonAction":action], replyHandler: printTitled("Reply"), errorHandler: printTitled("Error"))
                 
             }
         }

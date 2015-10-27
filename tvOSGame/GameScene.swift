@@ -82,14 +82,13 @@ class GameScene: SKScene, RemoteReceiverDelegate {
     }
     
     func deviceDidConnect(device: String, replyHandler: ([String : AnyObject]) -> Void) {
-        replyHandler(["Registered Device":device])
         if !registeredDevices.contains(device) {
             registeredDevices.append(device)
-            myLabel.text = "\(messageCount) Player: \(registeredDevices.count) Registered"
-            myLabel.removeAllActions()
-            myLabel.runAction(fadeAction, withKey: "fadeAction")
-            
         }
+        myLabel.text = "\(messageCount) Player: \(registeredDevices.count) Registered"
+        myLabel.removeAllActions()
+        myLabel.runAction(fadeAction, withKey: "fadeAction")
+        replyHandler(["Registered Device":device, "Player":registeredDevices.indexOf(device)! + 1])
     }
     
 }
