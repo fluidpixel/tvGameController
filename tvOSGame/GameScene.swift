@@ -51,37 +51,44 @@ class GameScene: SKScene, RemoteReceiverDelegate {
     override func update(currentTime: CFTimeInterval) {
         /* Called before each frame is rendered */
     }
-    func didReceiveMessage(userInfo: [String : AnyObject], replyHandler: ([String : AnyObject]) -> Void) {
+    func didReceiveMessage(userInfo: [String : AnyObject], fromDevice device:String, replyHandler: ([String : AnyObject]) -> Void) {
         // TODO:
-        didReceiveMessage(userInfo)
+        didReceiveMessage(userInfo, fromDevice: device)
         replyHandler(["Reply":0])
         
     }
-    func didReceiveMessage(userInfo: [String : AnyObject]) {
+    func didReceiveMessage(userInfo: [String : AnyObject], fromDevice device:String) {
         
         let fadeAction = SKAction.sequence([SKAction.fadeAlphaTo(1.0, duration: 0.1), SKAction.waitForDuration(2.0), SKAction.fadeOutWithDuration(1.0)])
         messageCount++
         
-        if let deviceID = userInfo["deviceID"]  as? String {
-            if registeredDevices.contains(deviceID) {
-                let player = registeredDevices.indexOf(deviceID)! + 1
-                if let action = userInfo["buttonAction"] as? String {
-                        myLabel.text = "\(messageCount) Player: \(player) - Action: \(action)"
-                    
-                        myLabel.removeAllActions()
-                        myLabel.runAction(fadeAction, withKey: "fadeAction")
-                }
-            } else {
-                registeredDevices.append(deviceID)
-                myLabel.text = "\(messageCount) Player: \(registeredDevices.count) Registered"
+        if registeredDevices.contains(device) {
+            let player = registeredDevices.indexOf(device)! + 1
+            if let action = userInfo["buttonAction"] as? String {
+                myLabel.text = "\(messageCount) Player: \(player) - Action: \(action)"
+                
                 myLabel.removeAllActions()
                 myLabel.runAction(fadeAction, withKey: "fadeAction")
             }
         } else {
-            myLabel.text = "\(messageCount) No Dictionary"
+            registeredDevices.append(device)
+            myLabel.text = "\(messageCount) Player: \(registeredDevices.count) Registered"
             myLabel.removeAllActions()
             myLabel.runAction(fadeAction, withKey: "fadeAction")
         }
+        
+        
+//        
+//        if let deviceID = userInfo["deviceID"]  as? String {
+//            
+//            
+//
+//            
+//        } else {
+//            myLabel.text = "\(messageCount) No Dictionary"
+//            myLabel.removeAllActions()
+//            myLabel.runAction(fadeAction, withKey: "fadeAction")
+//        }
         
 //        let particlePath = NSBundle.mainBundle().pathForResource("maginPartcle", ofType: "sks")!
 //        let particles = NSKeyedUnarchiver.unarchiveObjectWithFile(particlePath) as! SKEmitterNode

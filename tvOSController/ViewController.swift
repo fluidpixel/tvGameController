@@ -19,9 +19,6 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        //on launch register the device with the TV
-        remote.sendMessage(["deviceID":vendorID!], replyHandler: printTitled("Reply"), errorHandler: printTitled("Error"))
     }
 
     @IBAction func sendAction(sender: AnyObject) {

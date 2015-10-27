@@ -11,9 +11,9 @@ import Foundation
 
 @objc
 protocol RemoteReceiverDelegate : NSObjectProtocol {
-    func didReceiveMessage(userInfo: [String : AnyObject])
+    func didReceiveMessage(message: [String : AnyObject], fromDevice: String)
     
-    func didReceiveMessage(userInfo: [String : AnyObject], replyHandler: ([String : AnyObject]) -> Void)
+    func didReceiveMessage(message: [String : AnyObject], fromDevice: String, replyHandler: ([String : AnyObject]) -> Void)
 }
 
 @objc
@@ -42,7 +42,8 @@ class RemoteReceiver : NSObject, NSNetServiceDelegate, GCDAsyncSocketDelegate, N
     
     func socket(sock: GCDAsyncSocket!, didAcceptNewSocket newSocket: GCDAsyncSocket!) {
         self.connectedSockets.insert(newSocket)
-        newSocket.readDataToLength(UInt(sizeof(UInt64)), withTimeout: -1.0, tag: 0)
+        newSocket.readDataWithTimeout(-1.0, tag: 0)
+       // newSocket.readDataToLength(UInt(sizeof(UInt64)), withTimeout: -1.0, tag: 0)
         
         let data = "Connected".dataUsingEncoding(NSUTF8StringEncoding)
         newSocket.writeData(data, withTimeout: -1.0, tag: 0)
@@ -67,16 +68,19 @@ class RemoteReceiver : NSObject, NSNetServiceDelegate, GCDAsyncSocketDelegate, N
             where testPosition.startIndex == testString.startIndex {
             print("PINGED! \(testString)")
         }
-        else if let message = (try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data)) as? [String:AnyObject] {
-            
-            if let infoDict = message[kMessageReplyNotRequired] as? [String:AnyObject] {
-                self.delegate?.didReceiveMessage(infoDict)
+        else if let object = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data),
+                    let message = object as? [String:AnyObject] {
+  
+            if let infoDict = message[kMessageReplyNotRequired] as? [String:AnyObject],
+                let deviceID = message[kDeviceID] as? String {
+                self.delegate?.didReceiveMessage(infoDict, fromDevice: deviceID)
                 return
             }
             else if let infoDict = message[kMessageReplyRequired] as? [String:AnyObject],
-                let replyID = message[kMessageReplyID] as? Int {
+                let replyID = message[kMessageReplyID] as? Int,
+                let deviceID = message[kDeviceID] as? String {
                     
-                    self.delegate?.didReceiveMessage(infoDict) {
+                    self.delegate?.didReceiveMessage(infoDict, fromDevice: deviceID) {
                         (replyMessage) -> Void in
                         let data = NSKeyedArchiver.archivedDataWithRootObject([kMessageReply:replyMessage, kMessageReplyID:replyID])
                         sock.writeData(data, withTimeout: -1.0, tag: 0)
@@ -85,10 +89,11 @@ class RemoteReceiver : NSObject, NSNetServiceDelegate, GCDAsyncSocketDelegate, N
                     
             }
             else if let infoDict = message[kMessageReply] as? [String:AnyObject],
-                let replyID = message[kMessageReplyID] as? Int {
+                let replyID = message[kMessageReplyID] as? Int,
+                let deviceID = message[kDeviceID] as? String {
                     // TODO:
-                    print("Reply: \(infoDict) \(replyID)")
-            }
+                    print("Reply: \(infoDict) \(replyID) \(deviceID)")
+            }                
             else {
                 print("Unknown Mesaage: \(message)")
             }

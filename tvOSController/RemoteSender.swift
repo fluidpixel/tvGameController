@@ -7,20 +7,30 @@
 //
 
 import Foundation
+import UIKit
+
+
 
 // Utility methods to wrap the message in a dictionary so we can track messages and replies
 extension GCDAsyncSocket {
     func sendMessage(message:[String:AnyObject], withTimeout: NSTimeInterval = -1.0) {
-        let data = NSKeyedArchiver.archivedDataWithRootObject([kMessageReplyNotRequired:message])
-        self.writeData(data, withTimeout: withTimeout, tag: 0)
+        if let vendorID = UIDevice.currentDevice().identifierForVendor?.UUIDString {
+            let data = NSKeyedArchiver.archivedDataWithRootObject([kDeviceID:vendorID, kMessageReplyNotRequired:message])
+            self.writeData(data, withTimeout: withTimeout, tag: 0)
+        }
     }
     func sendMessageForReply(message:[String:AnyObject], replyKey:Int, withTimeout: NSTimeInterval = -1.0) {
-        let data = NSKeyedArchiver.archivedDataWithRootObject([kMessageReplyRequired:message, kMessageReplyID:replyKey])
-        self.writeData(data, withTimeout: withTimeout, tag: 0)
+        if let vendorID = UIDevice.currentDevice().identifierForVendor?.UUIDString {
+            let data:NSData
+            data = NSKeyedArchiver.archivedDataWithRootObject([kDeviceID:vendorID, kMessageReplyRequired:message, kMessageReplyID:replyKey])
+            self.writeData(data, withTimeout: withTimeout, tag: 0)
+        }
     }
     func sendReply(reply:[String:AnyObject], replyKey:Int, withTimeout: NSTimeInterval = -1.0) {
-        let data = NSKeyedArchiver.archivedDataWithRootObject([kMessageReply:reply, kMessageReplyID:replyKey])
-        self.writeData(data, withTimeout: withTimeout, tag: 0)
+        if let vendorID = UIDevice.currentDevice().identifierForVendor?.UUIDString {
+            let data = NSKeyedArchiver.archivedDataWithRootObject([kDeviceID:vendorID, kMessageReply:reply, kMessageReplyID:replyKey])
+            self.writeData(data, withTimeout: withTimeout, tag: 0)
+        }
     }
 }
 
@@ -110,6 +120,10 @@ public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceD
     // MARK: GCDAsyncSocketDelegate
     public func socket(sock: GCDAsyncSocket!, didConnectToHost host: String!, port: UInt16) {
         sock.readDataWithTimeout(-1.0, tag: 0)
+        
+        //on launch register the device with the TV
+        self.sendMessage([:], replyHandler: printTitled("Registered"), errorHandler: printTitled("Registration Error"))
+        
     }
     public func socketDidDisconnect(sock: GCDAsyncSocket!, withError err: NSError!) {
         //
@@ -149,7 +163,8 @@ public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceD
     
     func stopBrowsing() {
         self.coServiceBrowser.stop()
-        self.coServiceBrowser.delegate = nil
+        self.coServiceBrowser.delegate = self
+        self.coServiceBrowser.searchForServicesOfType(SERVICE_NAME, inDomain: "local.")
         print("Browsing Stopped")
     }
     // MARK: NSNetServiceBrowserDelegate

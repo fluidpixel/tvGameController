@@ -14,4 +14,4 @@ let kMessageReplyNotRequired = "kMessageReplyNotRequired"
 let kMessageReplyRequired = "kMessageReplyRequired."
 let kMessageReply = "kMessageReply"
 let kMessageReplyID = "kMessageReplyID"
-
+let kDeviceID = "kDeviceID"
