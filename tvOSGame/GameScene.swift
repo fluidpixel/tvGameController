@@ -57,47 +57,49 @@ class GameScene: SKScene, RemoteReceiverDelegate {
         replyHandler(["Reply":0])
         
     }
+    
+    let fadeAction = SKAction.sequence([SKAction.fadeAlphaTo(1.0, duration: 0.1), SKAction.waitForDuration(2.0), SKAction.fadeOutWithDuration(1.0)])
+    
     func didReceiveMessage(userInfo: [String : AnyObject], fromDevice device:String) {
         
-        let fadeAction = SKAction.sequence([SKAction.fadeAlphaTo(1.0, duration: 0.1), SKAction.waitForDuration(2.0), SKAction.fadeOutWithDuration(1.0)])
         messageCount++
         
-        if registeredDevices.contains(device) {
-            let player = registeredDevices.indexOf(device)! + 1
-            if let action = userInfo["buttonAction"] as? String {
-                myLabel.text = "\(messageCount) Player: \(player) - Action: \(action)"
-                
-                myLabel.removeAllActions()
-                myLabel.runAction(fadeAction, withKey: "fadeAction")
-            }
-        } else {
+        if !registeredDevices.contains(device) {
             registeredDevices.append(device)
             myLabel.text = "\(messageCount) Player: \(registeredDevices.count) Registered"
             myLabel.removeAllActions()
             myLabel.runAction(fadeAction, withKey: "fadeAction")
         }
         
+        let player = registeredDevices.indexOf(device)! + 1
+        if let action = userInfo["buttonAction"] as? String {
+            myLabel.text = "\(messageCount) Player: \(player) - Action: \(action)"
+            
+            myLabel.removeAllActions()
+            myLabel.runAction(fadeAction, withKey: "fadeAction")
+        }
         
-//        
-//        if let deviceID = userInfo["deviceID"]  as? String {
-//            
-//            
-//
-//            
-//        } else {
-//            myLabel.text = "\(messageCount) No Dictionary"
-//            myLabel.removeAllActions()
-//            myLabel.runAction(fadeAction, withKey: "fadeAction")
-//        }
-        
+    }
+    
+    func deviceDidConnect(device: String, replyHandler: ([String : AnyObject]) -> Void) {
+        replyHandler(["Registered Device":device])
+        if !registeredDevices.contains(device) {
+            registeredDevices.append(device)
+            myLabel.text = "\(messageCount) Player: \(registeredDevices.count) Registered"
+            myLabel.removeAllActions()
+            myLabel.runAction(fadeAction, withKey: "fadeAction")
+            
+        }
+    }
+    
+}
+
+
 //        let particlePath = NSBundle.mainBundle().pathForResource("maginPartcle", ofType: "sks")!
 //        let particles = NSKeyedUnarchiver.unarchiveObjectWithFile(particlePath) as! SKEmitterNode
 //        let effectNode = SKEffectNode()
 //        effectNode.addChild(particles)
 //        effectNode.position = CGPoint(x:CGRectGetMidX(self.frame), y:CGRectGetMidY(self.frame));
-        
-        // Make sure you only add the thruster once to the scene hierarchy or you'll see a crash!
+
+// Make sure you only add the thruster once to the scene hierarchy or you'll see a crash!
 //        self.addChild(effectNode)
-        
-    }
-}

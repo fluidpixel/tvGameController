@@ -14,6 +14,9 @@ protocol RemoteReceiverDelegate : NSObjectProtocol {
     func didReceiveMessage(message: [String : AnyObject], fromDevice: String)
     
     func didReceiveMessage(message: [String : AnyObject], fromDevice: String, replyHandler: ([String : AnyObject]) -> Void)
+    
+    func deviceDidConnect(device: String, replyHandler: ([String : AnyObject]) -> Void)
+
 }
 
 @objc
@@ -93,7 +96,15 @@ class RemoteReceiver : NSObject, NSNetServiceDelegate, GCDAsyncSocketDelegate, N
                 let deviceID = message[kDeviceID] as? String {
                     // TODO:
                     print("Reply: \(infoDict) \(replyID) \(deviceID)")
-            }                
+            }
+            else if let replyID = message[kMessageReplyID] as? Int,
+                let deviceID = message[kDeviceID] as? String {
+                    self.delegate?.deviceDidConnect(deviceID) {
+                        (replyMessage) -> Void in
+                        let data = NSKeyedArchiver.archivedDataWithRootObject([kMessageReply:replyMessage, kMessageReplyID:replyID])
+                        sock.writeData(data, withTimeout: -1.0, tag: 0)
+                    }
+            }
             else {
                 print("Unknown Mesaage: \(message)")
             }

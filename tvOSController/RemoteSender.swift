@@ -22,26 +22,47 @@ protocol TVCSessionDelegate : class {
 
 // Utility methods to wrap the message in a dictionary so we can track messages and replies
 extension GCDAsyncSocket {
-    func sendMessage(message:[String:AnyObject], withTimeout: NSTimeInterval = -1.0) {
+    func sendMessage(message:[String:AnyObject], withTimeout: NSTimeInterval = -1.0) -> Bool {
         if let vendorID = UIDevice.currentDevice().identifierForVendor?.UUIDString {
             let data = NSKeyedArchiver.archivedDataWithRootObject([kDeviceID:vendorID, kMessageReplyNotRequired:message])
             self.writeData(data, withTimeout: withTimeout, tag: 0)
+            return true
         }
+        return false
     }
-    func sendMessageForReply(message:[String:AnyObject], replyKey:Int, withTimeout: NSTimeInterval = -1.0) {
+    func sendMessageForReply(message:[String:AnyObject], replyKey:Int, withTimeout: NSTimeInterval = -1.0) -> Bool  {
         if let vendorID = UIDevice.currentDevice().identifierForVendor?.UUIDString {
-            let data:NSData
-            data = NSKeyedArchiver.archivedDataWithRootObject([kDeviceID:vendorID, kMessageReplyRequired:message, kMessageReplyID:replyKey])
+            let data = NSKeyedArchiver.archivedDataWithRootObject([kDeviceID:vendorID, kMessageReplyRequired:message, kMessageReplyID:replyKey])
             self.writeData(data, withTimeout: withTimeout, tag: 0)
+            return true
         }
+        return false
     }
-    func sendReply(reply:[String:AnyObject], replyKey:Int, withTimeout: NSTimeInterval = -1.0) {
+    
+    func sendDeviceID(replyKey:Int, withTimeout: NSTimeInterval = -1.0) -> Bool  {
+        if let vendorID = UIDevice.currentDevice().identifierForVendor?.UUIDString {
+            let data = NSKeyedArchiver.archivedDataWithRootObject([kDeviceID:vendorID, kMessageReplyID:replyKey])
+            self.writeData(data, withTimeout: withTimeout, tag: 0)
+            return true
+        }
+        return false
+    }
+    
+    func sendReply(reply:[String:AnyObject], replyKey:Int, withTimeout: NSTimeInterval = -1.0) -> Bool  {
         if let vendorID = UIDevice.currentDevice().identifierForVendor?.UUIDString {
             let data = NSKeyedArchiver.archivedDataWithRootObject([kDeviceID:vendorID, kMessageReply:reply, kMessageReplyID:replyKey])
             self.writeData(data, withTimeout: withTimeout, tag: 0)
+            return true
         }
+        return false
+    }
+    
+    func ping() {
+        let data = "TEST".dataUsingEncoding(NSUTF8StringEncoding)
+        self.writeData(data, withTimeout: -1.0, tag: 0)
     }
 }
+
 
 @objc
 public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceDelegate, GCDAsyncSocketDelegate {
@@ -130,10 +151,14 @@ public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceD
 
     // MARK: GCDAsyncSocketDelegate
     public func socket(sock: GCDAsyncSocket!, didConnectToHost host: String!, port: UInt16) {
-        //on launch register the device with the TV
-        self.sendMessage([:], replyHandler: printTitled("Registered"), errorHandler: printTitled("Registration Error"))
-        delegate?.didConnect()
         sock.readDataWithTimeout(-1.0, tag: 0)
+
+        let id = ++replyTagIdentifier
+        repliesPending[id] = printTitled("Registered")
+        
+        sock.sendDeviceID(id)
+        
+        delegate?.didConnect()
         
     }
     public func socketDidDisconnect(sock: GCDAsyncSocket!, withError err: NSError!) {
@@ -196,14 +221,7 @@ public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceD
         
         for timer in (1...5).map( { dispatch_time(DISPATCH_TIME_NOW, Int64($0 * NSEC_PER_SEC)) } ) {
             dispatch_after(timer, dispatch_get_main_queue()) {
-                if let selSock = self.selectedSocket {
-                    let data = "TEST".dataUsingEncoding(NSUTF8StringEncoding)
-                    
-                    selSock.writeData(data, withTimeout: -1.0, tag: 0)
-                }
-                else {
-                    print("No Connection")
-                }
+                self.selectedSocket?.ping()
             }
         }
         
