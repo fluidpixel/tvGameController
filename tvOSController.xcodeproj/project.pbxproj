@@ -19,7 +19,7 @@
 
 /* Begin PBXFileReference section */
 		277B4DA51BDE2E060058CAED /* RemoteSender.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RemoteSender.swift; sourceTree = "<group>"; };
-		27C95BA21BDE78590069F9A2 /* SharedKeys.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SharedKeys.swift; sourceTree = "<group>"; };
+		27C95BA21BDE78590069F9A2 /* SharedKeys.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SharedKeys.swift; path = ../SharedResources/SharedKeys.swift; sourceTree = "<group>"; };
 		5434D0B81BD90D71007E5EB8 /* tvOSController.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tvOSController.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5434D0BB1BD90D71007E5EB8 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		5434D0BD1BD90D71007E5EB8 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -28,8 +28,8 @@
 		5434D0C51BD90D71007E5EB8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		5434D0C71BD90D71007E5EB8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		5434D0D11BD90E0A007E5EB8 /* tvOSController-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "tvOSController-Bridging-Header.h"; sourceTree = "<group>"; };
-		54CF61071BD92F48004E72C5 /* GCDAsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDAsyncSocket.h; sourceTree = "<group>"; };
-		54CF61081BD92F48004E72C5 /* GCDAsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDAsyncSocket.m; sourceTree = "<group>"; };
+		54CF61071BD92F48004E72C5 /* GCDAsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GCDAsyncSocket.h; path = ../SharedResources/GCDAsyncSocket.h; sourceTree = "<group>"; };
+		54CF61081BD92F48004E72C5 /* GCDAsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = GCDAsyncSocket.m; path = ../SharedResources/GCDAsyncSocket.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -43,9 +43,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		27D9435A1BDFD16500E90B6B /* Shared Resources */ = {
+			isa = PBXGroup;
+			children = (
+				54CF61071BD92F48004E72C5 /* GCDAsyncSocket.h */,
+				54CF61081BD92F48004E72C5 /* GCDAsyncSocket.m */,
+				27C95BA21BDE78590069F9A2 /* SharedKeys.swift */,
+			);
+			name = "Shared Resources";
+			path = tvOSController;
+			sourceTree = "<group>";
+		};
 		5434D0AF1BD90D70007E5EB8 = {
 			isa = PBXGroup;
 			children = (
+				27D9435A1BDFD16500E90B6B /* Shared Resources */,
 				5434D0BA1BD90D71007E5EB8 /* tvOSController */,
 				5434D0B91BD90D71007E5EB8 /* Products */,
 			);
@@ -76,9 +88,6 @@
 		5434D0D01BD90D9C007E5EB8 /* RemoteSender */ = {
 			isa = PBXGroup;
 			children = (
-				54CF61071BD92F48004E72C5 /* GCDAsyncSocket.h */,
-				54CF61081BD92F48004E72C5 /* GCDAsyncSocket.m */,
-				27C95BA21BDE78590069F9A2 /* SharedKeys.swift */,
 				277B4DA51BDE2E060058CAED /* RemoteSender.swift */,
 				5434D0D11BD90E0A007E5EB8 /* tvOSController-Bridging-Header.h */,
 			);

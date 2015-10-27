@@ -23,9 +23,9 @@
 
 /* Begin PBXFileReference section */
 		277B4D9F1BDE1A090058CAED /* RemoteReceiver.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RemoteReceiver.swift; sourceTree = "<group>"; };
-		277B4DA31BDE2C130058CAED /* SharedKeys.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SharedKeys.swift; sourceTree = "<group>"; };
-		54CF61011BD92E8A004E72C5 /* GCDAsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDAsyncSocket.h; sourceTree = "<group>"; };
-		54CF61021BD92E8A004E72C5 /* GCDAsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDAsyncSocket.m; sourceTree = "<group>"; };
+		277B4DA31BDE2C130058CAED /* SharedKeys.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SharedKeys.swift; path = ../SharedResources/SharedKeys.swift; sourceTree = "<group>"; };
+		54CF61011BD92E8A004E72C5 /* GCDAsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GCDAsyncSocket.h; path = ../SharedResources/GCDAsyncSocket.h; sourceTree = "<group>"; };
+		54CF61021BD92E8A004E72C5 /* GCDAsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = GCDAsyncSocket.m; path = ../SharedResources/GCDAsyncSocket.m; sourceTree = "<group>"; };
 		54DDD1241BD911C100789B03 /* tvOSGame.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tvOSGame.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		54DDD1271BD911C100789B03 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		54DDD1291BD911C100789B03 /* GameScene.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = GameScene.sks; sourceTree = "<group>"; };
@@ -51,9 +51,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		27D9435B1BDFD17B00E90B6B /* Shared Resources */ = {
+			isa = PBXGroup;
+			children = (
+				54CF61011BD92E8A004E72C5 /* GCDAsyncSocket.h */,
+				54CF61021BD92E8A004E72C5 /* GCDAsyncSocket.m */,
+				277B4DA31BDE2C130058CAED /* SharedKeys.swift */,
+			);
+			name = "Shared Resources";
+			path = tvOSGame;
+			sourceTree = "<group>";
+		};
 		54DDD11B1BD911C100789B03 = {
 			isa = PBXGroup;
 			children = (
+				27D9435B1BDFD17B00E90B6B /* Shared Resources */,
 				54DDD1261BD911C100789B03 /* tvOSGame */,
 				54DDD1251BD911C100789B03 /* Products */,
 			);
@@ -89,9 +101,6 @@
 			isa = PBXGroup;
 			children = (
 				277B4D9F1BDE1A090058CAED /* RemoteReceiver.swift */,
-				277B4DA31BDE2C130058CAED /* SharedKeys.swift */,
-				54CF61011BD92E8A004E72C5 /* GCDAsyncSocket.h */,
-				54CF61021BD92E8A004E72C5 /* GCDAsyncSocket.m */,
 				54DDD1401BD911F400789B03 /* tvOSGame-bridging-header.h */,
 			);
 			name = Remote;
