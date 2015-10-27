@@ -8,6 +8,10 @@
 
 import UIKit
 
+func printTitled(title:String)(object:Any) {
+    print("\(title): \(object)")
+}
+
 class ViewController: UIViewController {
 
     let remote = RemoteSender()
@@ -17,14 +21,15 @@ class ViewController: UIViewController {
         super.viewDidLoad()
 
         //on launch register the device with the TV
-        remote.sendInfo(["deviceID":vendorID!])
+        remote.sendMessage(["deviceID":vendorID!], replyHandler: printTitled("Reply"), errorHandler: printTitled("Error"))
     }
 
     @IBAction func sendAction(sender: AnyObject) {
         if let button = sender as? UIButton {
             if let action = button.titleLabel?.text?.lowercaseString {
-                let dict = ["deviceID": vendorID!, "buttonAction":action]
-                remote.sendInfo(dict)
+                
+                remote.sendMessage(["deviceID": vendorID!, "buttonAction":action], replyHandler: printTitled("Reply"), errorHandler: printTitled("Error"))
+                
             }
         }
     }
@@ -36,4 +41,6 @@ class ViewController: UIViewController {
 
 
 }
+
+
 

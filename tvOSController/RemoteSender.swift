@@ -24,11 +24,6 @@ extension GCDAsyncSocket {
     }
 }
 
-func printTitled(title:String)(object:Any) {
-    print("\(title): \(object)")
-}
-
-
 @objc
 public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceDelegate, GCDAsyncSocketDelegate {
 
@@ -64,9 +59,7 @@ public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceD
         }
     }
     
-    func sendInfo(infoDict:[NSObject:AnyObject]) {
-        self.sendMessage(infoDict as! [String:AnyObject], replyHandler: printTitled("Reply"),  errorHandler: printTitled("Error"))
-    }
+
     
     var selectedSocket:GCDAsyncSocket? {
         if let coService = self.arrDevices.first?.name {
