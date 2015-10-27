@@ -22,6 +22,8 @@ protocol TVCSessionDelegate : class {
 
 // Utility methods to wrap the message in a dictionary so we can track messages and replies
 extension GCDAsyncSocket {
+    
+    @warn_unused_result
     func sendMessage(message:[String:AnyObject], withTimeout: NSTimeInterval = -1.0) -> Bool {
         if let vendorID = UIDevice.currentDevice().identifierForVendor?.UUIDString {
             let data = NSKeyedArchiver.archivedDataWithRootObject([kDeviceID:vendorID, kMessageReplyNotRequired:message])
@@ -30,6 +32,8 @@ extension GCDAsyncSocket {
         }
         return false
     }
+    
+    @warn_unused_result
     func sendMessageForReply(message:[String:AnyObject], replyKey:Int, withTimeout: NSTimeInterval = -1.0) -> Bool  {
         if let vendorID = UIDevice.currentDevice().identifierForVendor?.UUIDString {
             let data = NSKeyedArchiver.archivedDataWithRootObject([kDeviceID:vendorID, kMessageReplyRequired:message, kMessageReplyID:replyKey])
@@ -39,6 +43,7 @@ extension GCDAsyncSocket {
         return false
     }
     
+    @warn_unused_result
     func sendDeviceID(replyKey:Int, withTimeout: NSTimeInterval = -1.0) -> Bool  {
         if let vendorID = UIDevice.currentDevice().identifierForVendor?.UUIDString {
             let data = NSKeyedArchiver.archivedDataWithRootObject([kDeviceID:vendorID, kMessageReplyID:replyKey])
@@ -48,6 +53,7 @@ extension GCDAsyncSocket {
         return false
     }
     
+    @warn_unused_result
     func sendReply(reply:[String:AnyObject], replyKey:Int, withTimeout: NSTimeInterval = -1.0) -> Bool  {
         if let vendorID = UIDevice.currentDevice().identifierForVendor?.UUIDString {
             let data = NSKeyedArchiver.archivedDataWithRootObject([kDeviceID:vendorID, kMessageReply:reply, kMessageReplyID:replyKey])
@@ -81,6 +87,7 @@ public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceD
     }
     
     public func sendMessage(message: [String : AnyObject], replyHandler: (([String : AnyObject]) -> Void)?, errorHandler: ((NSError) -> Void)?) {
+        var sent:Bool
         
         if let selSock = self.selectedSocket {
             
@@ -88,17 +95,22 @@ public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceD
                 let id = ++replyTagIdentifier
                 repliesPending[id] = rh
                 
-                selSock.sendMessageForReply(message, replyKey: id)
+                sent = selSock.sendMessageForReply(message, replyKey: id)
             }
             else {
-                selSock.sendMessage(message)
+                sent = selSock.sendMessage(message)
             }
             
         }
         else {
+            sent = false
+        }
+        
+        if !sent {
             // TODO: Handle error properly
             errorHandler?(NSError(domain: "", code: -1, userInfo: nil))
         }
+        
     }
     
 
@@ -156,7 +168,7 @@ public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceD
         let id = ++replyTagIdentifier
         repliesPending[id] = printTitled("Registered")
         
-        sock.sendDeviceID(id)
+        _ = sock.sendDeviceID(id)
         
         delegate?.didConnect()
         
