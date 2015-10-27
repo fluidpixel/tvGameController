@@ -51,8 +51,13 @@ class GameScene: SKScene, RemoteReceiverDelegate {
     override func update(currentTime: CFTimeInterval) {
         /* Called before each frame is rendered */
     }
-    
-    func didReceiveMessage(userInfo: [NSObject : AnyObject]) {
+    func didReceiveMessage(userInfo: [String : AnyObject], replyHandler: ([String : AnyObject]) -> Void) {
+        // TODO:
+        didReceiveMessage(userInfo)
+        replyHandler(["Reply":0])
+        
+    }
+    func didReceiveMessage(userInfo: [String : AnyObject]) {
         
         let fadeAction = SKAction.sequence([SKAction.fadeAlphaTo(1.0, duration: 0.1), SKAction.waitForDuration(2.0), SKAction.fadeOutWithDuration(1.0)])
         messageCount++

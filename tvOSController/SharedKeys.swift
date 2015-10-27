@@ -10,8 +10,7 @@ import Foundation
 
 let SERVICE_NAME = "_probonjore._tcp."
 
-enum RemoteMessageTypes : String {
-    case ReplyRequired
-    case ReplyNotRequired
-    case Reply
-}
+let kMessageReplyNotRequired = "kMessageReplyNotRequired"
+let kMessageReplyRequired = "kMessageReplyRequired."
+let kMessageReply = "kMessageReply"
+let kMessageReplyID = "kMessageReplyID"

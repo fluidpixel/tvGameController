@@ -8,23 +8,67 @@
 
 import Foundation
 
-@objc
-class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceDelegate, GCDAsyncSocketDelegate {
+// Utility methods to wrap the message in a dictionary so we can track messages and replies
+extension GCDAsyncSocket {
+    func sendMessage(message:[String:AnyObject], withTimeout: NSTimeInterval = -1.0) {
+        let data = NSKeyedArchiver.archivedDataWithRootObject([kMessageReplyNotRequired:message])
+        self.writeData(data, withTimeout: withTimeout, tag: 0)
+    }
+    func sendMessageForReply(message:[String:AnyObject], replyKey:Int, withTimeout: NSTimeInterval = -1.0) {
+        let data = NSKeyedArchiver.archivedDataWithRootObject([kMessageReplyRequired:message, kMessageReplyID:replyKey])
+        self.writeData(data, withTimeout: withTimeout, tag: 0)
+    }
+    func sendReply(reply:[String:AnyObject], replyKey:Int, withTimeout: NSTimeInterval = -1.0) {
+        let data = NSKeyedArchiver.archivedDataWithRootObject([kMessageReply:reply, kMessageReplyID:replyKey])
+        self.writeData(data, withTimeout: withTimeout, tag: 0)
+    }
+}
 
-    internal var coServiceBrowser:NSNetServiceBrowser?
-    internal var mutableData:NSMutableData!
+func printTitled(title:String)(object:Any) {
+    print("\(title): \(object)")
+}
+
+
+@objc
+public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceDelegate, GCDAsyncSocketDelegate {
+
+    internal let coServiceBrowser = NSNetServiceBrowser()
     internal var dictSockets:[String:GCDAsyncSocket] =  [:]
-    internal var service:NSNetService!
-    internal var socket:GCDAsyncSocket!
     internal var arrDevices:Set<NSNetService> = []
-    internal var connected:Bool = false
-    
-    func sendInfo(infoDict:[NSObject:AnyObject]) {
-        let data = NSKeyedArchiver.archivedDataWithRootObject(infoDict)
-        self.getSelectedSocket()?.writeData(data, withTimeout: -1.0, tag: 0)
+
+    internal var replyTagIdentifier:Int = 0
+    internal var repliesPending:[Int: (([String : AnyObject]) -> Void)] = [:]
+
+    public var connected:Bool {
+        return self.selectedSocket != nil
     }
     
-    func getSelectedSocket() -> GCDAsyncSocket? {
+    public func sendMessage(message: [String : AnyObject], replyHandler: (([String : AnyObject]) -> Void)?, errorHandler: ((NSError) -> Void)?) {
+        
+        if let selSock = self.selectedSocket {
+            
+            if let rh = replyHandler {
+                let id = ++replyTagIdentifier
+                repliesPending[id] = rh
+                
+                selSock.sendMessageForReply(message, replyKey: id)
+            }
+            else {
+                selSock.sendMessage(message)
+            }
+            
+        }
+        else {
+            // TODO: Handle error properly
+            errorHandler?(NSError(domain: "", code: -1, userInfo: nil))
+        }
+    }
+    
+    func sendInfo(infoDict:[NSObject:AnyObject]) {
+        self.sendMessage(infoDict as! [String:AnyObject], replyHandler: printTitled("Reply"),  errorHandler: printTitled("Error"))
+    }
+    
+    var selectedSocket:GCDAsyncSocket? {
         if let coService = self.arrDevices.first?.name {
             return self.dictSockets[coService]
         }
@@ -34,15 +78,11 @@ class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceDelegate
 
     override init() {
         super.init()
-        self.resetServices()
+
+        self.coServiceBrowser.delegate = self
+        self.coServiceBrowser.searchForServicesOfType(SERVICE_NAME, inDomain: "local.")
     }
     
-    func resetServices() {
-        arrDevices = []
-        self.coServiceBrowser = NSNetServiceBrowser()
-        self.coServiceBrowser?.delegate = self
-        self.coServiceBrowser?.searchForServicesOfType(SERVICE_NAME, inDomain: "local.")
-    }
     func connectWithServer(service:NSNetService) -> Bool {
         if let coSocket = self.dictSockets[service.name] where coSocket.isConnected() {
             return true
@@ -66,25 +106,48 @@ class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceDelegate
     }
     
     // MARK: NSNetServiceDelegate
-    func netService(sender: NSNetService, didNotResolve errorDict: [String : NSNumber]) {
+    public func netService(sender: NSNetService, didNotResolve errorDict: [String : NSNumber]) {
         sender.delegate = self
     }
-    func netServiceDidResolveAddress(sender: NSNetService) {
+    public func netServiceDidResolveAddress(sender: NSNetService) {
         self.connectWithServer(sender)
     }
     
 
     // MARK: GCDAsyncSocketDelegate
-    func socket(sock: GCDAsyncSocket!, didConnectToHost host: String!, port: UInt16) {
-        sock.readDataToLength(UInt(sizeof(UInt64)), withTimeout: -1.0, tag: 0)
-    }
-    func socketDidDisconnect(sock: GCDAsyncSocket!, withError err: NSError!) {
-        //
-    }
-    func socket(sock: GCDAsyncSocket!, didReadData data: NSData!, withTag tag: Int) {
+    public func socket(sock: GCDAsyncSocket!, didConnectToHost host: String!, port: UInt16) {
         sock.readDataWithTimeout(-1.0, tag: 0)
     }
-    func socketDidCloseReadStream(sock: GCDAsyncSocket!) {
+    public func socketDidDisconnect(sock: GCDAsyncSocket!, withError err: NSError!) {
+        //
+    }
+    public func socket(sock: GCDAsyncSocket!, didReadData data: NSData!, withTag tag: Int) {
+        defer { sock.readDataWithTimeout(-1.0, tag: 0) }
+        
+        if let infoDict = NSKeyedUnarchiver.unarchiveObjectWithData(data) as? [String:AnyObject],
+            let reply = infoDict[kMessageReply] as? [String:AnyObject],
+            let replyID = infoDict[kMessageReplyID] as? Int  {
+                
+                if let replyHandler = repliesPending.removeValueForKey(replyID) {
+                    replyHandler(reply)
+                }
+                else {
+                    print("Reply received for unknown originator or duplicate reply")
+                }
+                return
+        }
+        else if let msg = NSKeyedUnarchiver.unarchiveObjectWithData(data) as? String {
+            print("Received Message: \(msg)")
+        }
+        else if let str = String(data: data, encoding: NSUTF8StringEncoding) where str == "Connected" {
+            print("Connected")
+            return
+        }
+        print("Unknown Message: \(String(data: data, encoding: NSUTF8StringEncoding)) - \(data)")
+        
+    }
+    
+    public func socketDidCloseReadStream(sock: GCDAsyncSocket!) {
         //
     }
     
@@ -92,21 +155,21 @@ class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceDelegate
     
     
     func stopBrowsing() {
-        self.coServiceBrowser?.stop()
-        self.coServiceBrowser?.delegate = nil
-        self.coServiceBrowser = nil
+        self.coServiceBrowser.stop()
+        self.coServiceBrowser.delegate = nil
+        print("Browsing Stopped")
     }
     // MARK: NSNetServiceBrowserDelegate
-    func netServiceBrowserDidStopSearch(browser: NSNetServiceBrowser) {
+    public func netServiceBrowserDidStopSearch(browser: NSNetServiceBrowser) {
         self.stopBrowsing()
     }
-    func netServiceBrowser(browser: NSNetServiceBrowser, didNotSearch errorDict: [String : NSNumber]) {
+    public func netServiceBrowser(browser: NSNetServiceBrowser, didNotSearch errorDict: [String : NSNumber]) {
         self.stopBrowsing()
     }
-    func netServiceBrowser(browser: NSNetServiceBrowser, didRemoveService service: NSNetService, moreComing: Bool) {
+    public func netServiceBrowser(browser: NSNetServiceBrowser, didRemoveService service: NSNetService, moreComing: Bool) {
         self.arrDevices.remove(service)
     }
-    func netServiceBrowser(browser: NSNetServiceBrowser, didFindService service: NSNetService, moreComing: Bool) {
+    public func netServiceBrowser(browser: NSNetServiceBrowser, didFindService service: NSNetService, moreComing: Bool) {
         self.arrDevices.insert(service)
         service.delegate = self
         service.resolveWithTimeout(30.0)
@@ -114,8 +177,14 @@ class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceDelegate
         
         for timer in (1...5).map( { dispatch_time(DISPATCH_TIME_NOW, Int64($0 * NSEC_PER_SEC)) } ) {
             dispatch_after(timer, dispatch_get_main_queue()) {
-                let data = "TEST".dataUsingEncoding(NSUTF8StringEncoding)
-                self.getSelectedSocket()?.writeData(data, withTimeout: -1.0, tag: 0)
+                if let selSock = self.selectedSocket {
+                    let data = "TEST".dataUsingEncoding(NSUTF8StringEncoding)
+                    
+                    selSock.writeData(data, withTimeout: -1.0, tag: 0)
+                }
+                else {
+                    print("No Connection")
+                }
             }
         }
         
