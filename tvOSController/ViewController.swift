@@ -12,13 +12,16 @@ func printTitled(title:String)(object:Any) {
     print("\(title): \(object)")
 }
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, TVCSessionDelegate {
 
     let remote = RemoteSender()
     let vendorID = UIDevice.currentDevice().identifierForVendor?.UUIDString
     
+    @IBOutlet var connectionStatus:UILabel!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        remote.delegate = self
     }
 
     @IBAction func sendAction(sender: AnyObject) {
@@ -37,6 +40,13 @@ class ViewController: UIViewController {
     }
 
 
+    // MARK: TVCSessionDelegate
+    func didConnect() {
+        self.connectionStatus.text = "Connected"
+    }
+    func didDisconnect() {
+        self.connectionStatus.text = "Disconnected"
+    }
 }
 
 

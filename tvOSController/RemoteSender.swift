@@ -9,6 +9,15 @@
 import Foundation
 import UIKit
 
+protocol TVCSessionDelegate : class {
+   // TODO:
+   // func didReceiveMessage(message: [String : AnyObject], fromDevice: String)
+   // func didReceiveMessage(message: [String : AnyObject], fromDevice: String, replyHandler: ([String : AnyObject]) -> Void)
+    
+    func didConnect()
+    func didDisconnect()
+    
+}
 
 
 // Utility methods to wrap the message in a dictionary so we can track messages and replies
@@ -36,6 +45,8 @@ extension GCDAsyncSocket {
 
 @objc
 public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceDelegate, GCDAsyncSocketDelegate {
+    
+    weak var delegate:TVCSessionDelegate?
 
     internal let coServiceBrowser = NSNetServiceBrowser()
     internal var dictSockets:[String:GCDAsyncSocket] =  [:]
@@ -119,14 +130,14 @@ public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceD
 
     // MARK: GCDAsyncSocketDelegate
     public func socket(sock: GCDAsyncSocket!, didConnectToHost host: String!, port: UInt16) {
-        sock.readDataWithTimeout(-1.0, tag: 0)
-        
         //on launch register the device with the TV
         self.sendMessage([:], replyHandler: printTitled("Registered"), errorHandler: printTitled("Registration Error"))
+        delegate?.didConnect()
+        sock.readDataWithTimeout(-1.0, tag: 0)
         
     }
     public func socketDidDisconnect(sock: GCDAsyncSocket!, withError err: NSError!) {
-        //
+        delegate?.didDisconnect()
     }
     public func socket(sock: GCDAsyncSocket!, didReadData data: NSData!, withTag tag: Int) {
         defer { sock.readDataWithTimeout(-1.0, tag: 0) }
