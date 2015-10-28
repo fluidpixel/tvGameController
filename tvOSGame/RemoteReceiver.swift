@@ -16,18 +16,51 @@ protocol RemoteReceiverDelegate : NSObjectProtocol {
     func didReceiveMessage(message: [String : AnyObject], fromDevice: String, replyHandler: ([String : AnyObject]) -> Void)
     
     func deviceDidConnect(device: String, replyHandler: ([String : AnyObject]) -> Void)
-
 }
 
+
+let failedToSendError = NSError(domain: "", code: -1, userInfo: nil)
+let invalidReplyError = NSError(domain: "", code: -1, userInfo: nil)
+
 @objc
-class RemoteReceiver : NSObject, NSNetServiceDelegate, GCDAsyncSocketDelegate, NSNetServiceBrowserDelegate {
+public class RemoteReceiver : NSObject, NSNetServiceDelegate, GCDAsyncSocketDelegate, NSNetServiceBrowserDelegate {
     weak var delegate:RemoteReceiverDelegate?
 
     internal var service:NSNetService!
     internal var socket:GCDAsyncSocket!
     internal var connectedSockets:Set<GCDAsyncSocket> = []
     
+    internal var replyGroups:[Int:dispatch_group_t] = [:]
+    internal var replyMessages:[Int:(String, [String:AnyObject])] = [:]
+    internal var replyIdentifierCounter:Int = 0
+    
     internal let delegateQueue = dispatch_get_main_queue()
+    
+    public func broadcastMessage(message: [String : AnyObject], replyHandler: ((String, [String : AnyObject]) -> Void)?, errorHandler: ((NSError) -> Void)?) {
+        if let rh = replyHandler {
+            for sock in connectedSockets {
+                let replyID = ++replyIdentifierCounter
+                let group = dispatch_group_create()
+                dispatch_group_enter(group)
+                replyGroups[replyID] = group
+                
+                dispatch_group_notify(group, dispatch_get_main_queue()) {
+                    if let params = self.replyMessages[replyID] {
+                        rh(params)
+                    }
+                    else {
+                        errorHandler?(invalidReplyError)
+                    }
+                }
+                sock.writeData(Message(type: .Broadcast, replyID: replyID, contents: message).data!, withTimeout: -1.0, tag: 0)
+            }
+        }
+        else {
+            for sock in connectedSockets {
+                sock.writeData(Message(type: .Broadcast, contents: message).data!, withTimeout: -1.0, tag: 0)
+            }
+        }        
+    }
     
     override init() {
         super.init()
@@ -43,81 +76,79 @@ class RemoteReceiver : NSObject, NSNetServiceDelegate, GCDAsyncSocketDelegate, N
         }
     }
     
-    func socket(sock: GCDAsyncSocket!, didAcceptNewSocket newSocket: GCDAsyncSocket!) {
+    public func socket(sock: GCDAsyncSocket!, didAcceptNewSocket newSocket: GCDAsyncSocket!) {
         self.connectedSockets.insert(newSocket)
         newSocket.readDataWithTimeout(-1.0, tag: 0)
-       // newSocket.readDataToLength(UInt(sizeof(UInt64)), withTimeout: -1.0, tag: 0)
-        
-        let data = "Connected".dataUsingEncoding(NSUTF8StringEncoding)
-        newSocket.writeData(data, withTimeout: -1.0, tag: 0)
-        
         
     }
     
-    func socketDidDisconnect(sock: GCDAsyncSocket!, withError err: NSError!) {
+    public func socketDidDisconnect(sock: GCDAsyncSocket!, withError err: NSError!) {
         self.connectedSockets.remove(sock)
         if self.connectedSockets.count == 0 {
             // restart connections
         }
     }
     
-    func socket(sock: GCDAsyncSocket!, didReadData data: NSData!, withTag tag: Int) {
-        defer {
-            sock.readDataWithTimeout(-1.0, tag: 0)
-        }
-        
-        if let testString = String(data: data, encoding: NSUTF8StringEncoding),
-            let testPosition = testString.rangeOfString("TEST")
-            where testPosition.startIndex == testString.startIndex {
-            print("PINGED! \(testString)")
-        }
-        else if let object = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data),
-                    let message = object as? [String:AnyObject] {
-  
-            if let infoDict = message[kMessageReplyNotRequired] as? [String:AnyObject],
-                let deviceID = message[kDeviceID] as? String {
-                self.delegate?.didReceiveMessage(infoDict, fromDevice: deviceID)
-                return
-            }
-            else if let infoDict = message[kMessageReplyRequired] as? [String:AnyObject],
-                let replyID = message[kMessageReplyID] as? Int,
-                let deviceID = message[kDeviceID] as? String {
+    
+    // curried function to send the user's reply to the sender
+    // calling with the first set of arguments returns another function which the user then calls
+    private func sendReply(sock: GCDAsyncSocket, _ replyID:Int)(reply:[String:AnyObject]) {
+        let message = Message(type: .Reply, replyID: replyID, contents: reply)
+        sock.writeData(message.data!, withTimeout: -1.0, tag: 0)
+    }
+    
+    public func socket(sock: GCDAsyncSocket!, didReadData data: NSData!, withTag tag: Int) {
+        sock.readDataWithTimeout(-1.0, tag: 0)
+
+        if let message = Message(data: data) {
+            switch message.type {
+            case .Message:
+                if let replyID = message.replyID {
+                    self.delegate?.didReceiveMessage(message.contents ?? [:], fromDevice: message.senderDeviceID, replyHandler: sendReply(sock, replyID) )
+                }
+                else {
+                    self.delegate?.didReceiveMessage(message.contents ?? [:], fromDevice: message.senderDeviceID)
+                }
+            case .Reply:
+                if let replyID = message.replyID, let group = replyGroups.removeValueForKey(replyID) {
                     
-                    self.delegate?.didReceiveMessage(infoDict, fromDevice: deviceID) {
-                        (replyMessage) -> Void in
-                        let data = NSKeyedArchiver.archivedDataWithRootObject([kMessageReply:replyMessage, kMessageReplyID:replyID])
-                        sock.writeData(data, withTimeout: -1.0, tag: 0)
+                    if let senderDeviceID = message.senderDeviceID,
+                        let contents = message.contents {
+                            replyMessages[replyID] = (senderDeviceID, contents)
                     }
-                    return
                     
-            }
-            else if let infoDict = message[kMessageReply] as? [String:AnyObject],
-                let replyID = message[kMessageReplyID] as? Int,
-                let deviceID = message[kDeviceID] as? String {
-                    // TODO:
-                    print("Reply: \(infoDict) \(replyID) \(deviceID)")
-            }
-            else if let replyID = message[kMessageReplyID] as? Int,
-                let deviceID = message[kDeviceID] as? String {
-                    self.delegate?.deviceDidConnect(deviceID) {
-                        (replyMessage) -> Void in
-                        let data = NSKeyedArchiver.archivedDataWithRootObject([kMessageReply:replyMessage, kMessageReplyID:replyID])
-                        sock.writeData(data, withTimeout: -1.0, tag: 0)
-                    }
-            }
-            else {
-                print("Unknown Mesaage: \(message)")
+                    dispatch_group_leave(group)
+                    
+                }
+            case .DeviceRegistering:
+                if let replyID = message.replyID {
+                    self.delegate?.deviceDidConnect(message.senderDeviceID, replyHandler: sendReply(sock, replyID) )
+                }
+                else {
+                    // TODO: Fix this
+                   // error - no replying
+                    print("Can't reply without ID")
+                }
+            case .TEST:
+                print("PINGED!")
+            case .Broadcast:
+                print("TV Received Broadcast N/A")
             }
         }
         else {
             print("Unknown Data: \(data)")
             if let testString = String(data: data, encoding: NSUTF8StringEncoding) {
-                print("            : \(testString)")
+                print("       UTF8 : \(testString)")
+            }
+            else if let testString = String(data: data, encoding: NSWindowsCP1250StringEncoding) {
+                print("     CP1250 : \(testString)")
             }
         }
+        
     }
-    
 }
+
+
 
 //internal var arrServices:[NSNetService] = []
 //internal var coServiceBrowser:NSNetServiceBrowser!

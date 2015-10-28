@@ -12,8 +12,11 @@ func printTitled(title:String)(object:Any) {
     print("\(title): \(object)")
 }
 
-class ViewController: UIViewController, TVCSessionDelegate {
 
+let colourCycle = [UIColor.redColor(), UIColor.greenColor(), UIColor.yellowColor(), UIColor.blueColor(), UIColor.magentaColor(), UIColor.cyanColor(), UIColor.orangeColor(), UIColor.brownColor(), UIColor.purpleColor()]
+
+class ViewController: UIViewController, TVCSessionDelegate {
+    var colour = 0
     let remote = RemoteSender()
     
     @IBOutlet var connectionStatus:UILabel!
@@ -46,6 +49,13 @@ class ViewController: UIViewController, TVCSessionDelegate {
     func didDisconnect() {
         self.connectionStatus.text = "Disconnected"
     }
+    func didReceiveBroadcast(message: [String : AnyObject], replyHandler: ([String : AnyObject]) -> Void) {
+        self.connectionStatus.backgroundColor = colourCycle[colour++]
+        colour%=colourCycle.count
+        print("Broadcast Message Received \(message)")
+        replyHandler(["Reply!":colour])
+        
+     }
 }
 
 

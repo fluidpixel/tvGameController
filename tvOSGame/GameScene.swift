@@ -31,6 +31,15 @@ class GameScene: SKScene, RemoteReceiverDelegate {
     override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
         /* Called when a touch begins */
         
+        self.remote.broadcastMessage(["Hello": "World"], replyHandler: { (deviceID, message) -> Void in
+            
+            print("reply: \(deviceID): \(message)")
+            
+            }) { (error) -> Void in
+                print(error)
+        }
+
+        
         for touch in touches {
             let location = touch.locationInNode(self)
             
