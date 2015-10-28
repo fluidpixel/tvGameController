@@ -11,20 +11,7 @@ import UIKit
 
 let SERVICE_NAME = "_probonjore._tcp."
 
-
-//let kDeviceID = "kDeviceID"
-//
-//let kMessageReplyNotRequired = "kMessageReplyNotRequired"
-//let kMessageReplyRequired = "kMessageReplyRequired."
-//let kMessageReply = "kMessageReply"
-//let kMessageReplyID = "kMessageReplyID"
-//
-//let kSenderDeviceID = "kSenderDeviceID"
-//let kTargetDeviceID = "kTargetDeviceID"
-//let kMessage = "kMessage"
-//let kReply = "kMessage"
-//let kReplyID = "kReplyID"
-//
+let CURRENT_DEVICE_VENDOR_ID:String = UIDevice.currentDevice().identifierForVendor!.UUIDString
 
 enum MessageDirection : CustomStringConvertible {
     case Incoming
@@ -60,22 +47,29 @@ enum MessageType : String, CustomStringConvertible {
 struct Message {
     let direction:MessageDirection
     let type:MessageType
-    let senderDeviceID:String!
+    let senderDeviceID:String
     let targetDeviceID:String?
     let replyID:Int?
     let contents:[String:AnyObject]?
     
+    var isForThisDevice:Bool {
+        if let targetDeviceID = self.targetDeviceID {
+            return targetDeviceID == CURRENT_DEVICE_VENDOR_ID
+        }
+        return true
+    }
+    
     init(type: MessageType, replyID: Int? = nil, contents: [String:AnyObject]? = nil, targetDeviceID: String? = nil) {
         self.type = type
-        self.senderDeviceID = UIDevice.currentDevice().identifierForVendor?.UUIDString
+        self.senderDeviceID = CURRENT_DEVICE_VENDOR_ID
         self.targetDeviceID = targetDeviceID
         self.replyID = replyID
         self.contents = contents
         self.direction = .Outgoing
     }
     
-    var dictionary:[String:AnyObject]? {
-        var rv:[String:AnyObject] = [:]
+    var dictionary:[String:AnyObject] {
+        var rv:[String:AnyObject] = ["senderDeviceID":senderDeviceID]
         
         if let contents = self.contents {
             rv[type.rawValue] = contents
@@ -92,29 +86,16 @@ struct Message {
             rv["replyID"] = replyID
         }
         
-        if let senderDeviceID = self.senderDeviceID {
-            rv["senderDeviceID"] = senderDeviceID
-            return rv
-        }
-        else if let senderDeviceID = UIDevice.currentDevice().identifierForVendor?.UUIDString {
-            rv["senderDeviceID"] = senderDeviceID
-            return rv
-        }
-        else {
-            return nil
-        }
+        return rv
     }
-    var data:NSData? {
-        if let dict = self.dictionary {
-            return NSKeyedArchiver.archivedDataWithRootObject(dict)
-        }
-        return nil
+    var data:NSData {
+        return NSKeyedArchiver.archivedDataWithRootObject(self.dictionary)
     }
     
     init?(dictionary:[String:AnyObject]) {
         self.direction = .Incoming
         
-        self.senderDeviceID = dictionary["senderDeviceID"] as? String
+        self.senderDeviceID = dictionary["senderDeviceID"] as! String
         self.targetDeviceID = dictionary["targetDeviceID"] as? String
         self.replyID = dictionary["replyID"] as? Int
         
@@ -145,5 +126,11 @@ struct Message {
         return nil
     }
     
+}
+
+extension GCDAsyncSocket {
+    func sendMessageObject(message:Message, withTimeout: NSTimeInterval = -1.0) {
+        self.writeData(message.data, withTimeout: withTimeout, tag: 0)
+    }
 }
 

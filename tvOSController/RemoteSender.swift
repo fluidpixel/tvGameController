@@ -9,56 +9,26 @@
 import Foundation
 import UIKit
 
+
+let ERROR_SEND_FAILED = NSError(domain: "com.fpstudios.tvOSController", code: -100, userInfo: [NSLocalizedDescriptionKey:"Failed To Send Message"])
+
+let ERROR_REPLY_FAILED = NSError(domain: "com.fpstudios.tvOSController", code: -200, userInfo: [NSLocalizedDescriptionKey:"No Message In Reply"])
+
 protocol TVCSessionDelegate : class {
-   // TODO:
-   // func didReceiveMessage(message: [String : AnyObject], fromDevice: String)
-   // func didReceiveMessage(message: [String : AnyObject], fromDevice: String, replyHandler: ([String : AnyObject]) -> Void)
-    
+
     func didConnect()
     func didDisconnect()
     
     func didReceiveBroadcast(message: [String : AnyObject], replyHandler: ([String : AnyObject]) -> Void)
+    func didReceiveBroadcast(message: [String : AnyObject])
+    
+    func didReceiveMessage(message: [String : AnyObject])
+    func didReceiveMessage(message: [String : AnyObject], replyHandler: ([String : AnyObject]) -> Void)
+    
 }
 
 
-// Utility methods to wrap the message in a dictionary so we can track messages and replies
-extension GCDAsyncSocket {
-    @warn_unused_result
-    func sendMessageObject(message:Message, withTimeout: NSTimeInterval = -1.0) -> Bool {
-        if let data = message.data {
-            self.writeData(data, withTimeout: withTimeout, tag: 0)
-            return true
-        }
-        return false
-    }
-    
-    @warn_unused_result
-    func sendMessage(message:[String:AnyObject], withTimeout: NSTimeInterval = -1.0) -> Bool {
-        return self.sendMessageObject(Message(type: .Message, contents: message), withTimeout: withTimeout)
-    }
-    
-    @warn_unused_result
-    func sendMessageForReply(message:[String:AnyObject], replyKey:Int, withTimeout: NSTimeInterval = -1.0) -> Bool  {
-        return self.sendMessageObject(Message(type: .Message, replyID: replyKey, contents: message), withTimeout: withTimeout)
-    }
-    
-    @warn_unused_result
-    func sendDeviceID(replyKey:Int, withTimeout: NSTimeInterval = -1.0) -> Bool  {
-        return self.sendMessageObject(Message(type: .DeviceRegistering, replyID: replyKey), withTimeout: withTimeout)
-    }
-    
-    @warn_unused_result
-    func sendReply(reply:[String:AnyObject], replyKey:Int, withTimeout: NSTimeInterval = -1.0) -> Bool  {
-        return self.sendMessageObject(Message(type: .Reply, replyID: replyKey, contents: reply), withTimeout: withTimeout)
-    }
-    
-    func ping() {
-        assert(self.sendMessageObject(Message(type: .TEST)))
-    }
-}
 
-let failedToSendError = NSError(domain: "", code: -1, userInfo: nil)
-let invalidReplyError = NSError(domain: "", code: -1, userInfo: nil)
 @objc
 public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceDelegate, GCDAsyncSocketDelegate {
     
@@ -85,37 +55,27 @@ public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceD
                 replyGroups[replyKey] = group
                 
                 dispatch_group_enter(group)
-                
-                var error = invalidReplyError
-                
                 dispatch_group_notify(group, dispatch_get_main_queue()) {
                     if let reply = self.replyMessages.removeValueForKey(replyKey) {
                         rh(reply)
                     }
                     else {
-                        errorHandler?(error)
+                        errorHandler?(ERROR_REPLY_FAILED)
                     }
                 }
                 
-                if !selSock.sendMessageForReply(message, replyKey: replyKey) {
-                    error = failedToSendError
-                    replyGroups.removeValueForKey(replyKey)
-                    dispatch_group_leave(group)
-                }
+                selSock.sendMessageObject(Message(type: .Message, replyID: replyKey, contents: message))
+                
             }
             else {
-                if !selSock.sendMessage(message) {
-                    errorHandler?(failedToSendError)
-                }
+                selSock.sendMessageObject(Message(type: .Message, contents: message))
             }
         }
         else {
-            errorHandler?(failedToSendError)
+            errorHandler?(ERROR_SEND_FAILED)
         }
         
     }
-    
-
     
     var selectedSocket:GCDAsyncSocket? {
         if let coService = self.arrDevices.first?.name {
@@ -153,7 +113,6 @@ public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceD
 
     }
     
-    
     // MARK: NSNetServiceBrowserDelegate
     public func netServiceBrowserDidStopSearch(browser: NSNetServiceBrowser) {
         self.coServiceBrowser.stop()
@@ -175,7 +134,7 @@ public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceD
         
         for timer in (1...5).map( { dispatch_time(DISPATCH_TIME_NOW, Int64($0 * NSEC_PER_SEC)) } ) {
             dispatch_after(timer, dispatch_get_main_queue()) {
-                self.selectedSocket?.ping()
+                self.selectedSocket?.sendMessageObject(Message(type: .TEST))
             }
         }
         
@@ -202,18 +161,26 @@ public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceD
         dispatch_group_notify(group, dispatch_get_main_queue()) {
             print("Device Registered")
         }
-        _ = sock.sendDeviceID(replyKey)
+        sock.sendMessageObject(Message(type: .DeviceRegistering, replyID: replyKey))
         
+        delegate?.didConnect()
     }
     public func socketDidDisconnect(sock: GCDAsyncSocket!, withError err: NSError!) {
         delegate?.didDisconnect()
+        
+        // clearout pending replies and generate errors for them
+        replyMessages.removeAll()
+        let groups = replyGroups.map { $0.1 }
+        replyGroups.removeAll()
+        for group in groups {
+            dispatch_group_leave(group)
+        }
     }
-    
+
     // curried function to send the user's reply to the sender
     // calling with the first set of arguments returns another function which the user then calls
     private func sendReply(sock: GCDAsyncSocket, _ replyID:Int)(reply:[String:AnyObject]) {
-        let message = Message(type: .Reply, replyID: replyID, contents: reply)
-        sock.writeData(message.data!, withTimeout: -1.0, tag: 0)
+        sock.sendMessageObject(Message(type: .Reply, replyID: replyID, contents: reply))
     }
     public func socket(sock: GCDAsyncSocket!, didReadData data: NSData!, withTag tag: Int) {
         sock.readDataWithTimeout(-1.0, tag: 0)
@@ -257,38 +224,3 @@ public class RemoteSender : NSObject, NSNetServiceBrowserDelegate, NSNetServiceD
 
     
 }
-
-
-/*
-internal var replyGroups:[Int:dispatch_group_t] = [:]
-internal var replyMessages:[Int:[String:AnyObject]?] = [:]      // NOTE: Possible double optionals (??) here as dictionary can hold null values
-internal var replyIdentifierCounter:Int = 0
-
-//internal var replyTagIdentifier:Int = 0
-//internal var repliesPending:[Int: (([String : AnyObject]) -> Void)] = [:]
-*/
-
-//- (void)netServiceBrowserWillSearch:(NSNetServiceBrowser *)browser
-//{
-//    NSLog(@"Will Search");
-//}
-//- (void)netServiceBrowser:(NSNetServiceBrowser *)browser didFindDomain:(NSString *)domainString moreComing:(BOOL)moreComing
-//{
-//    NSLog(@"Found");
-//}
-//
-//    public func socketDidCloseReadStream(sock: GCDAsyncSocket!) {
-//        //
-//    }
-//
-
-
-
-
-//#include "tvOSController-Swift.h"
-//
-//#import "GCDAsyncSocket.h"
-//
-//
-//#define ACK_SERVICE_NAME @"_ack._tcp."
-

@@ -42,6 +42,7 @@ class ViewController: UIViewController, TVCSessionDelegate {
     }
 
 
+    
     // MARK: TVCSessionDelegate
     func didConnect() {
         self.connectionStatus.text = "Connected"
@@ -52,10 +53,24 @@ class ViewController: UIViewController, TVCSessionDelegate {
     func didReceiveBroadcast(message: [String : AnyObject], replyHandler: ([String : AnyObject]) -> Void) {
         self.connectionStatus.backgroundColor = colourCycle[colour++]
         colour%=colourCycle.count
-        print("Broadcast Message Received \(message)")
+        print("Broadcast Message Received \(message) - reply required")
         replyHandler(["Reply!":colour])
         
      }
+    func didReceiveBroadcast(message: [String : AnyObject]) {
+        self.connectionStatus.backgroundColor = colourCycle[colour--]
+        colour+=colourCycle.count
+        colour%=colourCycle.count
+        print("Broadcast Message Received \(message) - no reply")
+    }
+    
+    func didReceiveMessage(message: [String : AnyObject]) {
+        print("Received Message \(message) - no reply")
+    }
+    func didReceiveMessage(message: [String : AnyObject], replyHandler: ([String : AnyObject]) -> Void) {
+        print("Received Message \(message) - reply required")
+        replyHandler(["Reply!":99])
+    }
 }
 
 

@@ -8,19 +8,19 @@
 
 import Foundation
 
+let ERROR_SEND_FAILED = NSError(domain: "com.fpstudios.tvOSController", code: -100, userInfo: [NSLocalizedDescriptionKey:"Failed To Send Message"])
+
+let ERROR_REPLY_FAILED = NSError(domain: "com.fpstudios.tvOSController", code: -200, userInfo: [NSLocalizedDescriptionKey:"No Message In Reply"])
+
 
 @objc
 protocol RemoteReceiverDelegate : NSObjectProtocol {
-    func didReceiveMessage(message: [String : AnyObject], fromDevice: String)
     
+    func didReceiveMessage(message: [String : AnyObject], fromDevice: String)
     func didReceiveMessage(message: [String : AnyObject], fromDevice: String, replyHandler: ([String : AnyObject]) -> Void)
     
     func deviceDidConnect(device: String, replyHandler: ([String : AnyObject]) -> Void)
 }
-
-
-let failedToSendError = NSError(domain: "", code: -1, userInfo: nil)
-let invalidReplyError = NSError(domain: "", code: -1, userInfo: nil)
 
 @objc
 public class RemoteReceiver : NSObject, NSNetServiceDelegate, GCDAsyncSocketDelegate, NSNetServiceBrowserDelegate {
@@ -49,15 +49,15 @@ public class RemoteReceiver : NSObject, NSNetServiceDelegate, GCDAsyncSocketDele
                         rh(params)
                     }
                     else {
-                        errorHandler?(invalidReplyError)
+                        errorHandler?(ERROR_REPLY_FAILED)
                     }
                 }
-                sock.writeData(Message(type: .Broadcast, replyID: replyID, contents: message).data!, withTimeout: -1.0, tag: 0)
+                sock.writeData(Message(type: .Broadcast, replyID: replyID, contents: message).data, withTimeout: -1.0, tag: 0)
             }
         }
         else {
             for sock in connectedSockets {
-                sock.writeData(Message(type: .Broadcast, contents: message).data!, withTimeout: -1.0, tag: 0)
+                sock.writeData(Message(type: .Broadcast, contents: message).data, withTimeout: -1.0, tag: 0)
             }
         }        
     }
@@ -65,17 +65,15 @@ public class RemoteReceiver : NSObject, NSNetServiceDelegate, GCDAsyncSocketDele
     override init() {
         super.init()
         self.socket = GCDAsyncSocket(delegate: self, delegateQueue: delegateQueue)
-        do {
-            try self.socket.acceptOnPort(0)
-            self.service = NSNetService(domain: "local.", type: SERVICE_NAME, name: "", port: Int32(self.socket.localPort()))
-            self.service.delegate = self
-            self.service.publish()
-        }
-        catch let error as NSError {
-            fatalError("Unable to create socket. Error \(error) with user info \(error.userInfo).")
-        }
+        
+        try! self.socket.acceptOnPort(0)
+        self.service = NSNetService(domain: "local.", type: SERVICE_NAME, name: "", port: Int32(self.socket.localPort()))
+        self.service.delegate = self
+        self.service.publish()
+
     }
     
+    // MARK: GCDAsyncSocketDelegate
     public func socket(sock: GCDAsyncSocket!, didAcceptNewSocket newSocket: GCDAsyncSocket!) {
         self.connectedSockets.insert(newSocket)
         newSocket.readDataWithTimeout(-1.0, tag: 0)
@@ -93,8 +91,7 @@ public class RemoteReceiver : NSObject, NSNetServiceDelegate, GCDAsyncSocketDele
     // curried function to send the user's reply to the sender
     // calling with the first set of arguments returns another function which the user then calls
     private func sendReply(sock: GCDAsyncSocket, _ replyID:Int)(reply:[String:AnyObject]) {
-        let message = Message(type: .Reply, replyID: replyID, contents: reply)
-        sock.writeData(message.data!, withTimeout: -1.0, tag: 0)
+        sock.sendMessageObject(Message(type: .Reply, replyID: replyID, contents: reply))
     }
     
     public func socket(sock: GCDAsyncSocket!, didReadData data: NSData!, withTag tag: Int) {
@@ -112,9 +109,8 @@ public class RemoteReceiver : NSObject, NSNetServiceDelegate, GCDAsyncSocketDele
             case .Reply:
                 if let replyID = message.replyID, let group = replyGroups.removeValueForKey(replyID) {
                     
-                    if let senderDeviceID = message.senderDeviceID,
-                        let contents = message.contents {
-                            replyMessages[replyID] = (senderDeviceID, contents)
+                    if let contents = message.contents {
+                        replyMessages[replyID] = (message.senderDeviceID, contents)
                     }
                     
                     dispatch_group_leave(group)
@@ -131,8 +127,8 @@ public class RemoteReceiver : NSObject, NSNetServiceDelegate, GCDAsyncSocketDele
                 }
             case .TEST:
                 print("PINGED!")
-            case .Broadcast:
-                print("TV Received Broadcast N/A")
+            default:
+                print("Unhandled Message Received: \(message.type)")
             }
         }
         else {
